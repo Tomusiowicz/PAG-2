@@ -34,17 +34,16 @@ class Graph:
 
         #doczepienie krawędzi do wierzchołków
         starting_node.add_edge(edge)
-        ending_node.add_edge(edge)
 
 class Node:
     def __init__(self, x:int, y:int):
         self.x = x
         self.y = y
         self.id = str(self.x) + ',' + str(self.y)
-        self.edges = []
+        self.edges_out = []
 
     def add_edge(self, edge:Edge):
-        self.edges.append(edge)
+        self.edges_out.append(edge)
 
 def load_shp_into_graph(workspace_path:str, shp_path:str, graph:Graph):
     arcpy.env.workspace = workspace_path
@@ -61,7 +60,7 @@ def load_shp_into_graph(workspace_path:str, shp_path:str, graph:Graph):
 def print_nodes_edges(graph:Graph):
     for node in graph.nodes.values():
         print(f"Node: {node.id}")
-        for edge in node.edges:
+        for edge in node.edges_out:
             print(f"Edge: {edge.id}, from:{edge.id_from}, to {edge.id_to}, len: {edge.length}")
 
 if __name__ == "__main__":
