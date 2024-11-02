@@ -2,11 +2,12 @@ import arcpy
 import os
 
 class Edge:
-    def __init__(self, id:int, id_from:tuple, id_to:tuple, id_road:int):
+    def __init__(self, id:int, id_from:tuple, id_to:tuple, id_road:int, length:float):
         self.id = id
         self.id_from = id_from
         self.id_to = id_to
         self.id_road = id_road
+        self.length = length
 
 class Graph:
     def __init__(self):
@@ -51,16 +52,17 @@ def load_shp_into_graph(workspace_path:str, shp_path:str, graph:Graph):
         for row in cursor:
             id = int(row[0])
             polyline = row[1]
+            length = polyline.getLength('PLANAR', 'METERS')
             start_coords = (round(polyline.firstPoint.X), round(polyline.firstPoint.Y))
             end_coords = (round(polyline.lastPoint.X), round(polyline.lastPoint.Y))
-            edge = Edge(id , start_coords, end_coords, id)
+            edge = Edge(id , start_coords, end_coords, id, length)
             graph.add_edge(edge)
 
 def print_nodes_edges(graph:Graph):
     for node in graph.nodes.values():
         print(f"Node: {node.id}")
         for edge in node.edges:
-            print(f"Edge: {edge.id}, from:{edge.id_from}, to {edge.id_to}")
+            print(f"Edge: {edge.id}, from:{edge.id_from}, to {edge.id_to}, len: {edge.length}")
 
 if __name__ == "__main__":
     graph = Graph()
