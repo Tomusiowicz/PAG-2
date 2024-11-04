@@ -21,20 +21,24 @@ class Graph:
             self.nodes[edge.id_from] = starting_node
             self.nodes[edge.id_to] = ending_node
 
-        elif edge.id_from in self.nodes: #wierzcholek poczatkowy jest juz w grafie
+        elif edge.id_from in self.nodes and not edge.id_to in self.nodes: #tylko wierzcholek poczatkowy jest w grafie
             starting_node = self.nodes[edge.id_from] #wskaznik do wierzcholka
             #utworzenie i dodanie brakujacego koncowego wierzcholka
             ending_node = Node(*edge.id_to)
             self.nodes[edge.id_to] = ending_node
 
-        elif edge.id_to in self.nodes: 
+        elif edge.id_to in self.nodes and not edge.id_from in self.nodes: #tylko wierzcholek koncowy jest w grafie
             ending_node = self.nodes[edge.id_to]
             starting_node = Node(*edge.id_from)
             self.nodes[edge.id_from] = starting_node
 
-        #doczepienie krawędzi do wierzchołków
+        else: #oba wierzchołki są już w grafie
+            starting_node = self.nodes[edge.id_from]
+            ending_node = self.nodes[edge.id_to]
+
+        #doczepienie krawędzi do wierzchołka
         starting_node.add_edge(edge)
-        #utworzenie krawedzi w druga strone\
+        #utworzenie krawedzi w druga stronę
         backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length)
         ending_node.add_edge(backwards_edge)
 
@@ -59,12 +63,20 @@ def load_shp_into_graph(workspace_path:str, shp_path:str, graph:Graph):
             end_coords = (round(polyline.lastPoint.X), round(polyline.lastPoint.Y))
             edge = Edge(id , start_coords, end_coords, id, length)
             graph.add_edge(edge)
-
+    
 def print_nodes_edges(graph:Graph):
     for node in graph.nodes.values():
         print(f"Node: {node.id}")
         for edge in node.edges_out:
             print(f"Edge: {edge.id}, from:{edge.id_from}, to {edge.id_to}, len: {edge.length}")
+
+def write_nodes_to_file(graph: Graph):
+    f = open("nodes.txt", "x")
+    for node in graph.nodes.values():
+        f.write(f"Node: {node.id} \n")
+        for edge in node.edges_out:
+            f.write(f"Edge: {edge.id}, from:{edge.id_from}, to {edge.id_to}, len: {edge.length} \n")
+    f.close()
 
 if __name__ == "__main__":
     graph = Graph()
@@ -72,4 +84,4 @@ if __name__ == "__main__":
     workspace = cwd + '\jezdnie_torun'
     shp_path = "jezdnie_torun\L4_1_BDOT10k__OT_SKJZ_L.shp"
     load_shp_into_graph(workspace, shp_path, graph)
-    print_nodes_edges(graph)
+    #write_nodes_to_file(graph)
