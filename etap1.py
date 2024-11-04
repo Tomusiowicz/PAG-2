@@ -34,6 +34,9 @@ class Graph:
 
         #doczepienie krawędzi do wierzchołków
         starting_node.add_edge(edge)
+        #utworzenie krawedzi w druga strone\
+        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length)
+        ending_node.add_edge(backwards_edge)
 
 class Node:
     def __init__(self, x:int, y:int):
