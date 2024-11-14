@@ -12,6 +12,20 @@ def retrieve_path(prev, a, b):
     path.reverse()  
     return path
 
+def generate_4_ids(coords:tuple) -> list[tuple]:
+    (x, y) = coords
+    return [(x,y), (x+1, y+1), (x+1, y),(x, y+1)]
+
+def node_exists(id_list:list, nodes_dict:dict) -> bool:
+    for id in id_list:
+        if id not in nodes_dict:
+            return False
+    return True
+
+def add_ids_and_nodes_to_dict(dict_of_nodes:dict, node_to_add:'Node', ids:list):
+    for id in ids:
+        dict_of_nodes[id] = node_to_add
+
 # Klasa reprezentująca krawędź w grafie
 class Edge:
     def __init__(self, id: int, id_from: tuple, id_to: tuple, id_road: int, length: float, time_cost: float):
@@ -30,32 +44,42 @@ class Graph:
         self.nodes = dict()  #klucze to identyfikatory węzłów, wartości to obiekty klasy Node
 
     # Funkcja dodająca krawędź do grafu
-    def add_edge(self, edge: Edge):
-        if edge.id_from not in self.nodes and edge.id_to not in self.nodes:
-            # Oba wierzchołki nie istnieją, więc tworzymy oba
-            starting_node = Node(*edge.id_from)
-            ending_node = Node(*edge.id_to)
-            self.nodes[edge.id_from] = starting_node
-            self.nodes[edge.id_to] = ending_node
-        elif edge.id_from in self.nodes and edge.id_to not in self.nodes:
-            # Tylko wierzchołek początkowy istnieje
-            starting_node = self.nodes[edge.id_from]
-            ending_node = Node(*edge.id_to)
-            self.nodes[edge.id_to] = ending_node
-        elif edge.id_to in self.nodes and edge.id_from not in self.nodes:
-            # Tylko wierzchołek końcowy istnieje
-            ending_node = self.nodes[edge.id_to]
-            starting_node = Node(*edge.id_from)
-            self.nodes[edge.id_from] = starting_node
-        else:
-            # Oba wierzchołki istnieją
-            starting_node = self.nodes[edge.id_from]
-            ending_node = self.nodes[edge.id_to]
+    def add_edge(self, edge:Edge):
+        ids_from = generate_4_ids(edge.id_from)
+        ids_to = generate_4_ids(edge.id_to)
 
+        if not node_exists(ids_from, self.nodes) and not node_exists(ids_to, self.nodes): #oba wierzcholki krawedzi nie znajduja sie w grafie
+            starting_node = Node(*edge.id_from)
+            ending_node = Node(*edge.id_to)
+            #dodanie wierzcholkow do slownika w grafie
+            add_ids_and_nodes_to_dict(self.nodes, starting_node, ids_from)
+            add_ids_and_nodes_to_dict(self.nodes, ending_node, ids_to)
+            
+
+        elif node_exists(ids_from, self.nodes) and not node_exists(ids_to, self.nodes): #tylko wierzcholek poczatkowy jest w grafie
+            starting_node = self.nodes[edge.id_from] #wskaznik do wierzcholka
+            #utworzenie i dodanie brakujacego koncowego wierzcholka
+            ending_node = Node(*edge.id_to)
+            add_ids_and_nodes_to_dict(self.nodes, ending_node, ids_to)
+            
+
+        elif node_exists(ids_to, self.nodes) and not node_exists(ids_from, self.nodes): #tylko wierzcholek koncowy jest w grafie
+            ending_node = self.nodes[edge.id_to]
+            #utworzenie i dodanie brakujacego koncowego wierzcholka
+            starting_node = Node(*edge.id_from)
+            add_ids_and_nodes_to_dict(self.nodes, starting_node, ids_from)
+            
+
+        else: #oba wierzchołki są już w grafie
+            starting_node = self.nodes[edge.id_from]
+            ending_node = self.nodes[edge.id_to]
+            
+        #doczepienie krawędzi do wierzchołka
         starting_node.add_edge(edge)
-        # Dodajemy krawędź w przeciwną stronę (dwukierunkowy graf)
-        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length, edge.time_cost)
+        #utworzenie krawedzi w druga stronę
+        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length)
         ending_node.add_edge(backwards_edge)
+
 
     def reset_nodes(self):
         for node in self.nodes.values():

@@ -2,7 +2,28 @@ import arcpy
 import os
 import heapq
 import numpy as np
-from proj_1v1 import *
+
+def retrieve_path(prev, a, b):
+    path = [b]
+    while b != a:
+        b = prev[b]  
+        path.append(b)
+    path.reverse()  
+    return path
+
+def generate_4_ids(coords:tuple) -> list[tuple]:
+    (x, y) = coords
+    return [(x,y), (x+1, y+1), (x+1, y),(x, y+1)]
+
+def node_exists(id_list:list, nodes_dict:dict) -> bool:
+    for id in id_list:
+        if id not in nodes_dict:
+            return False
+    return True
+
+def add_ids_and_nodes_to_dict(dict_of_nodes:dict, node_to_add:'Node', ids:list):
+    for id in ids:
+        dict_of_nodes[id] = node_to_add
 
 class Edge:
     def __init__(self, id: int, id_from: tuple, id_to: tuple, id_road: int, length: float):
@@ -17,28 +38,35 @@ class Graph:
         self.nodes = dict()
 
     def add_edge(self, edge:Edge):
-        if not edge.id_from in self.nodes and not edge.id_to in self.nodes: #oba wierzcholki krawedzi nie znajduja sie w grafie
+        ids_from = generate_4_ids(edge.id_from)
+        ids_to = generate_4_ids(edge.id_to)
+
+        if not node_exists(ids_from, self.nodes) and not node_exists(ids_to, self.nodes): #oba wierzcholki krawedzi nie znajduja sie w grafie
             starting_node = Node(*edge.id_from)
             ending_node = Node(*edge.id_to)
             #dodanie wierzcholkow do slownika w grafie
-            self.nodes[edge.id_from] = starting_node
-            self.nodes[edge.id_to] = ending_node
+            add_ids_and_nodes_to_dict(self.nodes, starting_node, ids_from)
+            add_ids_and_nodes_to_dict(self.nodes, ending_node, ids_to)
+            
 
-        elif edge.id_from in self.nodes and not edge.id_to in self.nodes: #tylko wierzcholek poczatkowy jest w grafie
+        elif node_exists(ids_from, self.nodes) and not node_exists(ids_to, self.nodes): #tylko wierzcholek poczatkowy jest w grafie
             starting_node = self.nodes[edge.id_from] #wskaznik do wierzcholka
             #utworzenie i dodanie brakujacego koncowego wierzcholka
             ending_node = Node(*edge.id_to)
-            self.nodes[edge.id_to] = ending_node
+            add_ids_and_nodes_to_dict(self.nodes, ending_node, ids_to)
+            
 
-        elif edge.id_to in self.nodes and not edge.id_from in self.nodes: #tylko wierzcholek koncowy jest w grafie
+        elif node_exists(ids_to, self.nodes) and not node_exists(ids_from, self.nodes): #tylko wierzcholek koncowy jest w grafie
             ending_node = self.nodes[edge.id_to]
+            #utworzenie i dodanie brakujacego koncowego wierzcholka
             starting_node = Node(*edge.id_from)
-            self.nodes[edge.id_from] = starting_node
+            add_ids_and_nodes_to_dict(self.nodes, starting_node, ids_from)
+            
 
         else: #oba wierzchołki są już w grafie
             starting_node = self.nodes[edge.id_from]
             ending_node = self.nodes[edge.id_to]
-
+            
         #doczepienie krawędzi do wierzchołka
         starting_node.add_edge(edge)
         #utworzenie krawedzi w druga stronę
@@ -76,7 +104,7 @@ class Graph:
 
         # - jeżeli bieżący węzeł jest końcowym zwracamy go i odtwarzamy ścieżke
             if u.x == b.x and u.y == b.y:
-                path = retrive_path(prev, a, b)
+                path = retrieve_path(prev, a, b)
 
                 used_edges = self.get_used_edges(path)
                 return path, used_edges
