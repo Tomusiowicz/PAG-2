@@ -2,7 +2,15 @@ import arcpy
 import os
 import heapq
 import numpy as np
-from proj_1v1 import *
+
+def retrieve_path(prev, a, b):
+    path = [b]
+    while b != a:
+        b = prev[b]
+        path.append(b)
+
+    path.reverse()
+    return path
 
 class Edge:
     def __init__(self, id: int, id_from: tuple, id_to: tuple, id_road: int, length: float):
@@ -67,7 +75,7 @@ class Graph:
 
         # - jeżeli bieżący węzeł jest końcowym zwracamy go i odtwarzamy ścieżke
             if u.x == b.x and u.y == b.y:
-                path = retrive_path(prev, a, b)
+                path = retrieve_path(prev, a, b)
                 used_edges = self.get_used_edges(path)
                 return path, used_edges
 
