@@ -55,7 +55,6 @@ class Graph:
             add_ids_and_nodes_to_dict(self.nodes, starting_node, ids_from)
             add_ids_and_nodes_to_dict(self.nodes, ending_node, ids_to)
             
-
         elif node_exists(ids_from, self.nodes) and not node_exists(ids_to, self.nodes): #tylko wierzcholek poczatkowy jest w grafie
             starting_node = self.nodes[edge.id_from] #wskaznik do wierzcholka
             #utworzenie i dodanie brakujacego koncowego wierzcholka
@@ -77,7 +76,7 @@ class Graph:
         #doczepienie krawędzi do wierzchołka
         starting_node.add_edge(edge)
         #utworzenie krawedzi w druga stronę
-        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length)
+        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length, edge.time_cost)
         ending_node.add_edge(backwards_edge)
 
 
@@ -178,6 +177,43 @@ def load_shp_into_graph(workspace_path: str, shp_path: str, graph: Graph):
             edge = Edge(id, start_coords, end_coords, id, length, time_cost)
             graph.add_edge(edge)
 
+def calculate_euclidean_distance(p1, p2):
+    return np.sqrt((p2[0] - p1[0])**2 + (p2[1]-p1[1])**2)
+
+def get_start_end_points(workspace_path: str, shp_path: str) -> list[tuple]: #first point is starting second is ending
+    arcpy.env.workspace = workspace_path
+    with arcpy.da.SearchCursor(shp_path, ["FID", "SHAPE@"]) as cursor:
+        points = []
+        for row in cursor:
+            point = row[1].firstPoint
+            coords = (point.X, point.Y)
+            points.append(coords)
+    return points
+
+def find_nearests_nodes(points:list[tuple], graph:Graph): #returns ids in dict 
+    start = points[0]
+    end = points[1]
+    print(start, end)
+    current_key_start = None
+    current_key_end = None
+    current_shortest_dist_start = float('inf')
+    current_shortest_dist_end = float('inf')
+    
+    for key in graph.nodes:
+        start_distance = calculate_euclidean_distance(start, key)
+        end_distance = calculate_euclidean_distance(end, key)
+
+        if start_distance < current_shortest_dist_start:
+            current_key_start = key
+            current_shortest_dist_start = start_distance
+
+        if end_distance < current_shortest_dist_end:
+            current_key_end = key
+            current_shortest_dist_end = end_distance
+            
+    print(current_key_start, current_key_end)
+    return current_key_start, current_key_end
+
 # Funkcja zapisująca wynikową ścieżkę do pliku shape
 def save_shp(workspace_path: str, shp_to_copy: str, shp_result: str, used_edges: list):
     arcpy.env.workspace = workspace_path
@@ -200,22 +236,26 @@ def save_shp(workspace_path: str, shp_to_copy: str, shp_result: str, used_edges:
 if __name__ == "__main__":
     graph = Graph()
     cwd = os.getcwd()
-    workspace = R"C:\Users\Acer\Desktop\SEMESTR_5\PAG2\PAG2-master\data"
-    shp_path = "jezdnie.shp"
-    shp_result = "result_fastest_new5"
+    workspace = cwd + '/jezdnie_torun'
+    #workspace = R"C:\Users\Acer\Desktop\SEMESTR_5\PAG2\PAG2-master\data"
+    shp_points = 'pkty.shp'
+    shp_path = 'jezdnie.shp'
+    shp_result = "result_from_points"
 
     load_shp_into_graph(workspace, shp_path, graph)
-    a = list(graph.nodes.values())[0]  
-    b = list(graph.nodes.values())[10]
+    points = get_start_end_points(workspace, shp_points)
+    start, end = find_nearests_nodes(points, graph)
+    a = graph.nodes[start]
+    b = graph.nodes[end]
 
     result, used_edges = graph.astar_fastest(a, b)
 
-    graph.reset_nodes()
+    #graph.reset_nodes()
     # Znalezienie alternatywnej trasy kiedy te z pierwszej mają podwojoną długość
     for edge in used_edges:
         edge.time_cost = edge.time_cost * 2
 
-    result_new, used_edges_new = graph.astar_fastest(a, b)
+    #result_new, used_edges_new = graph.astar_fastest(a, b)
 
     # Zapis warstwy do shp
-    # save_shp(workspace, shp_path, shp_result, used_edges_new)
+    save_shp(workspace, shp_path, shp_result, used_edges)
