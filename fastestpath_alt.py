@@ -77,7 +77,7 @@ class Graph:
         #doczepienie krawędzi do wierzchołka
         starting_node.add_edge(edge)
         #utworzenie krawedzi w druga stronę
-        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length)
+        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length, edge.time_cost)
         ending_node.add_edge(backwards_edge)
 
 
@@ -179,8 +179,13 @@ def load_shp_into_graph(workspace_path: str, shp_path: str, graph: Graph):
             graph.add_edge(edge)
 
 # Funkcja zapisująca wynikową ścieżkę do pliku shape
-def save_shp(workspace_path: str, shp_to_copy: str, shp_result: str, used_edges: list):
+def save_shp(workspace_path: str, shp_to_copy: str, shp_result: str, project_path: str, used_edges: list):
     arcpy.env.workspace = workspace_path
+    shp_result_path = os.path.join(workspace_path, f"{shp_result}.shp")
+
+    if arcpy.Exists(shp_result_path):
+        arcpy.Delete_management(shp_result_path)
+        print("Nadpisano warstwe")
     arcpy.CreateFeatureclass_management(
         out_path=workspace_path, out_name=shp_result,
         geometry_type="POLYLINE", template=shp_to_copy,
@@ -195,6 +200,14 @@ def save_shp(workspace_path: str, shp_to_copy: str, shp_result: str, used_edges:
             if int(row[0]) in used_edges_id:
                 insert_cursor.insertRow(row)
 
+    project = arcpy.mp.ArcGISProject(project_path)
+
+    if project:
+        map = project.listMaps()[0]
+        map.addDataFromPath(shp_result_path)
+        print("Dodano")
+        project.save()
+
     print(f"shape saved ok {shp_result}")
 
 if __name__ == "__main__":
@@ -202,11 +215,13 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     workspace = R"C:\Users\Acer\Desktop\SEMESTR_5\PAG2\PAG2-master\data"
     shp_path = "jezdnie.shp"
-    shp_result = "result_fastest_new5"
+    project_path = r"C:\Users\Acer\Desktop\SEMESTR_5\PAG2\lab_3\lab_3.aprx"
+    shp_result1 = "result_fastest_added"
+    # shp_result2 = "result_fastest_new_7"
 
     load_shp_into_graph(workspace, shp_path, graph)
     a = list(graph.nodes.values())[0]  
-    b = list(graph.nodes.values())[10]
+    b = list(graph.nodes.values())[40]
 
     result, used_edges = graph.astar_fastest(a, b)
 
@@ -217,5 +232,11 @@ if __name__ == "__main__":
 
     result_new, used_edges_new = graph.astar_fastest(a, b)
 
+
+
+
+
+
     # Zapis warstwy do shp
-    # save_shp(workspace, shp_path, shp_result, used_edges_new)
+    save_shp(workspace, shp_path, shp_result1, project_path, used_edges)
+    # save_shp(workspace, shp_path, shp_result2, used_edges_new)

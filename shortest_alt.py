@@ -201,12 +201,12 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     workspace = R"C:\Users\Acer\Desktop\SEMESTR_5\PAG2\PAG2-master\data"
     shp_path = "jezdnie.shp"
-    shp_result = "result_shortest_new2"
+    shp_result = "result_shortest_new3"
 
     load_shp_into_graph(workspace, shp_path, graph)
 
     a = list(graph.nodes.values())[0]
-    b = list(graph.nodes.values())[10]
+    b = list(graph.nodes.values())[40]
 
     result, used_edges = graph.astar(a, b)
 
@@ -230,4 +230,4 @@ if __name__ == "__main__":
 #       total_cost += node.g
 
     # zapis warstwy do pliku shp
-    # save_shp(workspace, shp_path, shp_result, used_edges_new)
+    save_shp(workspace, shp_path, shp_result, used_edges_new)
