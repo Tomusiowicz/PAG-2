@@ -6,22 +6,60 @@ from classes import *
 
 def load_shp_into_graph(workspace_path: str, shp_path: str, graph: 'Graph'):
     arcpy.env.workspace = workspace_path
+
+    #Słownik prędkości (m/s)
     speed_dict = {
-        'gminna': 50 / 3.6,
-        'powiatowa': 60 / 3.6,
-        'wojewódzka': 90 / 3.6,
-        'wewnętrzna': 15 / 3.6
+        "powiatowa": {
+            "droga zbiorcza": 60 / 3.6,
+            "droga lokalna": 50 / 3.6,
+            "droga wewnetrzna": 30 / 3.6,
+            "droga dojazdowa": 20 / 3.6,
+        },
+        "gminna": {
+            "droga zbiorcza": 50 / 3.6,
+            "droga lokalna": 40 / 3.6,
+            "droga wewnetrzna": 25 / 3.6,
+            "droga dojazdowa": 15 / 3.6,
+        },
+        "wojewódzka": {
+            "droga zbiorcza": 90 / 3.6,
+            "droga lokalna": 70 / 3.6,
+            "droga wewnetrzna": 40 / 3.6,
+            "droga dojazdowa": 30 / 3.6,
+        },
+        "wewnętrzna": {
+            "droga zbiorcza": 30 / 3.6,
+            "droga lokalna": 25 / 3.6,
+            "droga wewnetrzna": 15 / 3.6,
+            "droga dojazdowa": 10 / 3.6,
+        },
     }
-    with arcpy.da.SearchCursor(shp_path, ["FID", "SHAPE@", "KAT_ZARZAD"]) as cursor:
+
+    default_speed = 50 /3.6
+
+    with arcpy.da.SearchCursor(shp_path, ["FID", "SHAPE@", "KAT_ZARZAD", "KLASA_DROG", "ONEWAY"]) as cursor:
         for row in cursor:
             id = int(row[0])
             polyline = row[1]
             length = polyline.getLength('PLANAR', 'METERS')  # Długość krawędzi w metrach
             start_coords = (round(polyline.firstPoint.X), round(polyline.firstPoint.Y))
             end_coords = (round(polyline.lastPoint.X), round(polyline.lastPoint.Y))
-            speed = speed_dict.get(row[2], 50 / 3.6) 
+
+
+            #tu zmienilem z metody get na indexy
+            kat_zarzad = row[2]
+            klasa_drog = row[3]
+
+            if kat_zarzad in speed_dict and klasa_drog in speed_dict[kat_zarzad]:
+                speed = speed_dict[kat_zarzad][klasa_drog]
+            else:
+                speed = default_speed
+
             time_cost = length / speed 
-            edge = Edge(id, start_coords, end_coords, id, length, time_cost)
+
+            oneway = int(row[4])#domyslna wartosc, dodane 0 w warstwie
+
+            edge = Edge(id, start_coords, end_coords, id, length, time_cost, oneway)
             graph.add_edge(edge)
 
 def calculate_euclidean_distance(p1, p2):
