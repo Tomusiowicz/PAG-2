@@ -25,7 +25,7 @@ def retrieve_path(prev, a, b):
 
 
 class Edge:
-    def __init__(self, id: int, id_from: tuple, id_to: tuple, id_road: int, length: float, time_cost: float):
+    def __init__(self, id: int, id_from: tuple, id_to: tuple, id_road: int, length: float, time_cost: float, oneway: int):
 
         self.id = id  # Unikalny identyfikator krawędzi
         self.id_from = id_from  # Punkt początkowy krawędzi
@@ -33,7 +33,7 @@ class Edge:
         self.id_road = id_road  # Identyfikator drogi - droga moze miec kilka krawedzi
         self.length = length  # Długość krawędzi (metry)
         self.time_cost = time_cost  # Czas przejazdu po krawędzi (sekundy)
-
+        self.oneway = oneway #kierunkowość
 
 class Graph:
     def __init__(self):
@@ -73,11 +73,17 @@ class Graph:
             starting_node = self.nodes[edge.id_from]
             ending_node = self.nodes[edge.id_to]
 
-        # doczepienie krawędzi do wierzchołka
-        starting_node.add_edge(edge)
-        # utworzenie krawedzi w druga stronę
-        backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length, edge.time_cost)
-        ending_node.add_edge(backwards_edge)
+       # Uwzględniamy kierunkowść
+        if edge.oneway == 0:  # Dwukierunkowa
+            starting_node.add_edge(edge)  # from -> to
+            backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length, edge.time_cost, oneway=0)
+            ending_node.add_edge(backwards_edge)  # to -> from
+        elif edge.oneway == 1:  # Jednokierunkowa zgodnie z geometria
+            starting_node.add_edge(edge)
+        elif edge.oneway == 2:  # Jednokierunkowa w przeciwnym kierunku
+            backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length, edge.time_cost, oneway=2)
+            ending_node.add_edge(backwards_edge)
+
 
     def reset_nodes(self):
         for node in self.nodes.values():
@@ -114,8 +120,8 @@ class Graph:
                 if neighbor in visited:
                     continue
 
-                # Obliczamy nowy koszt dotarcia do sąsiada (czas przejazdu + 5 sekund na węzeł)
-                new_neighbor_g = u.g + edge.time_cost + 5
+                # Obliczamy nowy koszt dotarcia do sąsiada (usunięte 5 sek)
+                new_neighbor_g = u.g + edge.time_cost
 
                 if new_neighbor_g < neighbor.g:
                     # Aktualizujemy koszt g i f sąsiada, jeśli znaleźliśmy lepszą trasę
