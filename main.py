@@ -26,6 +26,11 @@ if __name__ == "__main__":
     graph.reset_nodes()
     result_alt, used_edges_alt = graph.astar_fastest(a, b) #zmiana metody w zależności od trasy najszybsza/najkrotsza
 
-    # Zapis warstwy do shp
+    shp_result_dijkstra = 'result_dijkstra'  
+    result_dijkstra, used_edges_dijkstra, total_distance_dijkstra = graph.dijkstra(a, b)
+    #print(total_distance_dijkstra)
+    save_shp(workspace, shp_path, shp_result_dijkstra, project_path, used_edges_dijkstra)
+
+    # Zapis warstw do shp
     save_shp(workspace, shp_path, shp_result, project_path, used_edges)
     save_shp(workspace, shp_path, shp_result_alt, project_path, used_edges_alt)

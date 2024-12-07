@@ -33,6 +33,9 @@ def load_shp_into_graph(workspace_path: str, shp_path: str, graph: 'Graph'):
             "droga wewnetrzna": 15 / 3.6,
             "droga dojazdowa": 10 / 3.6,
         },
+        "krajowa": {
+            "droga główna": 100 / 3.6
+        }
     }
 
     default_speed = 50 /3.6
@@ -45,8 +48,6 @@ def load_shp_into_graph(workspace_path: str, shp_path: str, graph: 'Graph'):
             start_coords = (round(polyline.firstPoint.X), round(polyline.firstPoint.Y))
             end_coords = (round(polyline.lastPoint.X), round(polyline.lastPoint.Y))
 
-
-            #tu zmienilem z metody get na indexy
             kat_zarzad = row[2]
             klasa_drog = row[3]
 
@@ -56,16 +57,15 @@ def load_shp_into_graph(workspace_path: str, shp_path: str, graph: 'Graph'):
                 speed = default_speed
 
             time_cost = length / speed 
-
-            oneway = int(row[4])#domyslna wartosc, dodane 0 w warstwie
-
+            oneway = int(row[4])
+            
             edge = Edge(id, start_coords, end_coords, id, length, time_cost, oneway)
             graph.add_edge(edge)
 
 def calculate_euclidean_distance(p1, p2):
     return np.sqrt((p2[0] - p1[0])**2 + (p2[1]-p1[1])**2)
 
-def get_start_end_points(workspace_path: str, shp_path: str) -> list[tuple]: #first point is starting second is ending
+def get_start_end_points(workspace_path: str, shp_path: str) -> list[tuple]: 
     arcpy.env.workspace = workspace_path
     with arcpy.da.SearchCursor(shp_path, ["FID", "SHAPE@"]) as cursor:
         points = []
@@ -75,7 +75,7 @@ def get_start_end_points(workspace_path: str, shp_path: str) -> list[tuple]: #fi
             points.append(coords)
     return points
 
-def find_nearests_nodes(points:list[tuple], graph:Graph): #returns ids in dict 
+def find_nearests_nodes(points:list[tuple], graph:Graph):  
     start = points[0]
     end = points[1]
     current_key_start = None
