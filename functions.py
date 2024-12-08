@@ -75,7 +75,7 @@ def get_start_end_points(workspace_path: str, shp_path: str) -> list[tuple]:
             points.append(coords)
     return points
 
-def find_nearests_nodes(points:list[tuple], graph:Graph):  
+def find_nearest_nodes(points:list[tuple], graph:Graph):  
     start = points[0]
     end = points[1]
     current_key_start = None

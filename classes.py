@@ -1,15 +1,11 @@
 import heapq
 import numpy as np
 
-def node_exists(id_list:list, nodes_dict:dict) -> bool:
+def node_exists(id_list:list, nodes_dict:dict):
     for id in id_list:
-        if id not in nodes_dict:
-            return False
-    return True
-
-def add_ids_and_nodes_to_dict(dict_of_nodes:dict, node_to_add:'Node', ids:list):
-    for id in ids:
-        dict_of_nodes[id] = node_to_add
+        if id in nodes_dict:
+            return id
+    return False
 
 def generate_4_ids(coords:tuple) -> list[tuple]:
     (x, y) = coords
@@ -48,24 +44,22 @@ class Graph:
             starting_node = Node(*edge.id_from)
             ending_node = Node(*edge.id_to)
 
-            add_ids_and_nodes_to_dict(self.nodes, starting_node, ids_from)
-            add_ids_and_nodes_to_dict(self.nodes, ending_node, ids_to)
+            self.nodes[edge.id_from] = starting_node
+            self.nodes[edge.id_to] = ending_node
 
         elif node_exists(ids_from, self.nodes) and not node_exists(ids_to, self.nodes):  # tylko wierzcholek poczatkowy jest w grafie
-            starting_node = self.nodes[edge.id_from]  
+            starting_node = self.nodes[node_exists(ids_from, self.nodes)]  
             ending_node = Node(*edge.id_to)
-            add_ids_and_nodes_to_dict(self.nodes, ending_node, ids_to)
-
+            self.nodes[edge.id_to] = ending_node
 
         elif node_exists(ids_to, self.nodes) and not node_exists(ids_from, self.nodes):  # tylko wierzcholek koncowy jest w grafie
-            ending_node = self.nodes[edge.id_to]
+            ending_node = self.nodes[node_exists(ids_to, self.nodes)]
             starting_node = Node(*edge.id_from)
-            add_ids_and_nodes_to_dict(self.nodes, starting_node, ids_from)
-
+            self.nodes[edge.id_from] = starting_node
 
         else:  # oba wierzchołki są już w grafie
-            starting_node = self.nodes[edge.id_from]
-            ending_node = self.nodes[edge.id_to]
+            starting_node = self.nodes[node_exists(ids_from, self.nodes)]
+            ending_node = self.nodes[node_exists(ids_to, self.nodes)]
 
        # Uwzględniamy kierunkowść
         if edge.oneway == 0:  # Dwukierunkowa
@@ -77,7 +71,6 @@ class Graph:
         elif edge.oneway == 2:  # Jednokierunkowa w przeciwnym kierunku
             backwards_edge = Edge(edge.id, edge.id_to, edge.id_from, edge.id_road, edge.length, edge.time_cost, oneway=2)
             ending_node.add_edge(backwards_edge)
-
 
     def reset_nodes(self):
         for node in self.nodes.values():
