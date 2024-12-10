@@ -7,10 +7,6 @@ def node_exists(id_list:list, nodes_dict:dict):
             return id
     return False
 
-def add_node(id_list:list, nodes_dict:dict, node):
-    for id in id_list:
-        nodes_dict[id] = node
-
 def generate_4_ids(coords:tuple) -> list[tuple]:
     (x, y) = coords
     return [(x,y), (x+1, y+1), (x+1, y),(x, y+1)]
@@ -48,20 +44,20 @@ class Graph:
             starting_node = Node(*edge.id_from)
             ending_node = Node(*edge.id_to)
 
-            add_node(ids_from, self.nodes, starting_node)
-            add_node(ids_to, self.nodes, ending_node)
-            
+            self.nodes[edge.id_from] = starting_node
+            self.nodes[edge.id_to] = ending_node
+
         elif node_exists(ids_from, self.nodes) and not node_exists(ids_to, self.nodes):  # tylko wierzcholek poczatkowy jest w grafie
             starting_node = self.nodes[node_exists(ids_from, self.nodes)]  
             ending_node = Node(*edge.id_to)
-            
-            add_node(ids_to, self.nodes, ending_node)
-            
+
+            self.nodes[edge.id_to] = ending_node
+
         elif node_exists(ids_to, self.nodes) and not node_exists(ids_from, self.nodes):  # tylko wierzcholek koncowy jest w grafie
             ending_node = self.nodes[node_exists(ids_to, self.nodes)]
             starting_node = Node(*edge.id_from)
-            
-            add_node(ids_from, self.nodes, starting_node)
+
+            self.nodes[edge.id_from] = starting_node
 
         else:  # oba wierzchołki są już w grafie
             starting_node = self.nodes[node_exists(ids_from, self.nodes)]
@@ -106,7 +102,7 @@ class Graph:
                 return path, used_edges
             visited.add(u)
             for edge in u.edges_out:
-                neighbor = self.nodes.get(node_exists(generate_4_ids(edge.id_to), self.nodes))
+                neighbor = self.nodes.get(edge.id_to)
                 if neighbor in visited:
                     continue
 
@@ -147,7 +143,7 @@ class Graph:
 
             # - dla każdego sąsiada bieżącego węzła:
             for edge in u.edges_out:
-                neigbour = self.nodes.get(node_exists(generate_4_ids(edge.id_to), self.nodes))
+                neigbour = self.nodes.get(edge.id_to)
 
                 if neigbour in visited:
                     continue
@@ -176,7 +172,7 @@ class Graph:
                 break
 
             for edge in current_node.edges_out:
-                neighbor = self.nodes[node_exists(generate_4_ids(edge.id_to), self.nodes)]
+                neighbor = self.nodes[edge.id_to]
                 distance = current_distance + edge.length  
 
                 if distance < distances[neighbor]:
